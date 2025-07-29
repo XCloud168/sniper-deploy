@@ -524,8 +524,7 @@ start_services() {
         echo -e "${GREEN}部署完成！${NC}"
         echo -e "${BLUE}部署版本: $VERSION${NC}"
         echo -e "${BLUE}服务访问地址:${NC}"
-        echo -e "${YELLOW}前端: http://localhost:3000${NC}"
-        echo -e "${YELLOW}API: http://localhost:8000${NC}"
+        echo -e "${YELLOW} http://localhost:9000${NC}"
     else
         echo -e "${RED}✗ 其他服务启动失败${NC}"
         exit 1
