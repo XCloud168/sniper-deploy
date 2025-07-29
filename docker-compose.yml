@@ -1,38 +1,4 @@
 services:
-  n8n-shared: &n8n-shared
-    image: docker.n8n.io/n8nio/n8n:latest
-    restart: unless-stopped
-    volumes:
-      - ./data/n8n_storage:/home/node/.n8n:rw
-    env_file:
-      - .env
-    environment:
-      - WEBHOOK_URL=${WEBHOOK_URL}
-      - N8N_ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - N8N_RUNNERS_ENABLED=true
-      - GENERIC_TIMEZONE=Asia/Shanghai
-      - TZ=Asia/Shanghai
-      - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_HOST=${POSTGRES_HOST}
-      - DB_POSTGRESDB_PORT=${POSTGRES_PORT}
-      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
-      - DB_POSTGRESDB_USER=${POSTGRES_USER}
-      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
-      - EXECUTIONS_MODE=queue
-      - QUEUE_BULL_REDIS_HOST=redis
-      - QUEUE_BULL_REDIS_PORT=6379
-      - QUEUE_HEALTH_CHECK_ACTIVE=true
-    links:
-      - redis
-      - postgres
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - backend
-    profiles:
-      - donotstart
-
   api-shared: &api-shared
     image: sniper-api:${VERSION:-latest}
     user: "1000:1000"
@@ -90,21 +56,6 @@ services:
       - NEXT_DISABLE_TURBOPACK=1
     ports:
       - "3000:3000"
-    networks:
-      - backend
-
-  n8n:
-    <<: *n8n-shared
-    profiles: []
-    ports:
-      - "5678:5678"
-
-  n8n-worker:
-    <<: *n8n-shared
-    profiles: []
-    command: worker
-    depends_on:
-      - n8n
     networks:
       - backend
 
