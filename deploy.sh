@@ -264,7 +264,7 @@ load_images() {
     echo -e "${BLUE}部署版本: $VERSION${NC}"
 
     # 只加载从S3下载的Docker镜像文件，排除data.tar.gz
-    for file in frontend-*.tar.gz api-*.tar.gz; do
+    for file in frontend-$VERSION.tar.gz api-$VERSION.tar.gz; do
         if [[ -f "$file" ]]; then
             echo -e "${YELLOW}正在加载 $file (版本: $VERSION)...${NC}"
 
@@ -275,6 +275,46 @@ load_images() {
                 IMAGE_INFO=$(docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | grep -E "sniper-(frontend|api)" | tail -1)
                 if [[ -n "$IMAGE_INFO" ]]; then
                     echo -e "${BLUE}镜像信息: $IMAGE_INFO${NC}"
+                fi
+
+                                # 如果是latest版本，确保镜像标签为latest
+                if [[ "$VERSION" == "latest" ]]; then
+                    echo -e "${YELLOW}处理latest版本标签...${NC}"
+
+                    # 获取刚加载的镜像（通过docker load的输出或最新创建的镜像）
+                    if [[ "$file" == *"frontend"* ]]; then
+                        # 查找最新创建的前端镜像
+                        LOADED_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" --filter "reference=sniper-frontend" --filter "dangling=false" | head -1)
+                        if [[ -n "$LOADED_IMAGE" ]]; then
+                            # 如果镜像标签不是latest，重新标记
+                            if [[ "$LOADED_IMAGE" != "sniper-frontend:latest" ]]; then
+                                echo -e "${YELLOW}重新标记前端镜像为latest...${NC}"
+                                echo -e "${BLUE}原镜像: $LOADED_IMAGE${NC}"
+                                docker tag "$LOADED_IMAGE" "sniper-frontend:latest"
+                                echo -e "${GREEN}✓ 前端镜像已标记为 sniper-frontend:latest${NC}"
+                            else
+                                echo -e "${GREEN}✓ 前端镜像已经是 sniper-frontend:latest${NC}"
+                            fi
+                        else
+                            echo -e "${YELLOW}⚠ 未找到前端镜像${NC}"
+                        fi
+                    elif [[ "$file" == *"api"* ]]; then
+                        # 查找最新创建的API镜像
+                        LOADED_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" --filter "reference=sniper-api" --filter "dangling=false" | head -1)
+                        if [[ -n "$LOADED_IMAGE" ]]; then
+                            # 如果镜像标签不是latest，重新标记
+                            if [[ "$LOADED_IMAGE" != "sniper-api:latest" ]]; then
+                                echo -e "${YELLOW}重新标记API镜像为latest...${NC}"
+                                echo -e "${BLUE}原镜像: $LOADED_IMAGE${NC}"
+                                docker tag "$LOADED_IMAGE" "sniper-api:latest"
+                                echo -e "${GREEN}✓ API镜像已标记为 sniper-api:latest${NC}"
+                            else
+                                echo -e "${GREEN}✓ API镜像已经是 sniper-api:latest${NC}"
+                            fi
+                        else
+                            echo -e "${YELLOW}⚠ 未找到API镜像${NC}"
+                        fi
+                    fi
                 fi
             else
                 echo -e "${RED}✗ $file 加载失败${NC}"
@@ -314,10 +354,27 @@ verify_loaded_images() {
     if docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^$FRONTEND_IMAGE$"; then
         echo -e "${GREEN}✓ 前端镜像: $FRONTEND_IMAGE${NC}"
     else
-        echo -e "${RED}✗ 未找到前端镜像: $FRONTEND_IMAGE${NC}"
-        echo -e "${YELLOW}可用的前端镜像:${NC}"
-        docker images --format "{{.Repository}}:{{.Tag}}" | grep "sniper-frontend" || echo -e "${YELLOW}暂无前端镜像${NC}"
-        return 1
+        # 如果是latest版本，检查是否有任何前端镜像
+        if [[ "$VERSION" == "latest" ]]; then
+            FRONTEND_EXISTS=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "sniper-frontend" | head -1)
+            if [[ -n "$FRONTEND_EXISTS" ]]; then
+                echo -e "${GREEN}✓ 前端镜像: $FRONTEND_EXISTS (latest版本)${NC}"
+                # 确保有latest标签
+                if [[ "$FRONTEND_EXISTS" != "sniper-frontend:latest" ]]; then
+                    echo -e "${YELLOW}创建latest标签...${NC}"
+                    docker tag "$FRONTEND_EXISTS" "sniper-frontend:latest"
+                    echo -e "${GREEN}✓ 前端镜像已标记为 sniper-frontend:latest${NC}"
+                fi
+            else
+                echo -e "${RED}✗ 未找到前端镜像${NC}"
+                return 1
+            fi
+        else
+            echo -e "${RED}✗ 未找到前端镜像: $FRONTEND_IMAGE${NC}"
+            echo -e "${YELLOW}可用的前端镜像:${NC}"
+            docker images --format "{{.Repository}}:{{.Tag}}" | grep "sniper-frontend" || echo -e "${YELLOW}暂无前端镜像${NC}"
+            return 1
+        fi
     fi
 
     # 检查是否有对应版本的API镜像
@@ -325,10 +382,27 @@ verify_loaded_images() {
     if docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "^$API_IMAGE$"; then
         echo -e "${GREEN}✓ API镜像: $API_IMAGE${NC}"
     else
-        echo -e "${RED}✗ 未找到API镜像: $API_IMAGE${NC}"
-        echo -e "${YELLOW}可用的API镜像:${NC}"
-        docker images --format "{{.Repository}}:{{.Tag}}" | grep "sniper-api" || echo -e "${YELLOW}暂无API镜像${NC}"
-        return 1
+        # 如果是latest版本，检查是否有任何API镜像
+        if [[ "$VERSION" == "latest" ]]; then
+            API_EXISTS=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "sniper-api" | head -1)
+            if [[ -n "$API_EXISTS" ]]; then
+                echo -e "${GREEN}✓ API镜像: $API_EXISTS (latest版本)${NC}"
+                # 确保有latest标签
+                if [[ "$API_EXISTS" != "sniper-api:latest" ]]; then
+                    echo -e "${YELLOW}创建latest标签...${NC}"
+                    docker tag "$API_EXISTS" "sniper-api:latest"
+                    echo -e "${GREEN}✓ API镜像已标记为 sniper-api:latest${NC}"
+                fi
+            else
+                echo -e "${RED}✗ 未找到API镜像${NC}"
+                return 1
+            fi
+        else
+            echo -e "${RED}✗ 未找到API镜像: $API_IMAGE${NC}"
+            echo -e "${YELLOW}可用的API镜像:${NC}"
+            docker images --format "{{.Repository}}:{{.Tag}}" | grep "sniper-api" || echo -e "${YELLOW}暂无API镜像${NC}"
+            return 1
+        fi
     fi
 
     # 显示所有相关镜像
@@ -357,6 +431,51 @@ stop_existing_services() {
     fi
 }
 
+# 执行数据库迁移
+run_database_migration() {
+    echo -e "${BLUE}执行数据库迁移...${NC}"
+
+    # 确保在正确的目录中
+    cd "$SCRIPT_DIR"
+
+    # 设置版本环境变量（使用传入的版本或默认版本）
+    VERSION=${VERSION:-$DEFAULT_VERSION}
+    export VERSION="$VERSION"
+    echo -e "${BLUE}使用版本: $VERSION${NC}"
+
+    # 等待PostgreSQL健康检查通过
+    echo -e "${YELLOW}等待PostgreSQL健康检查通过...${NC}"
+    timeout=60
+    counter=0
+    while [ $counter -lt $timeout ]; do
+        if docker-compose -f "$COMPOSE_FILE" ps postgres | grep -q "healthy"; then
+            echo -e "${GREEN}✓ PostgreSQL服务已就绪${NC}"
+            break
+        fi
+        echo -e "${YELLOW}等待PostgreSQL服务就绪... ($counter/$timeout)${NC}"
+        sleep 2
+        counter=$((counter + 2))
+    done
+
+    if [ $counter -ge $timeout ]; then
+        echo -e "${RED}✗ PostgreSQL服务启动超时${NC}"
+        echo -e "${YELLOW}查看PostgreSQL日志:${NC}"
+        docker-compose -f "$COMPOSE_FILE" logs postgres
+        exit 1
+    fi
+
+    # 执行数据库迁移
+    echo -e "${YELLOW}正在执行数据库迁移...${NC}"
+    if docker-compose -f "$COMPOSE_FILE" run --rm db-migrate; then
+        echo -e "${GREEN}✓ 数据库迁移成功${NC}"
+    else
+        echo -e "${RED}✗ 数据库迁移失败${NC}"
+        echo -e "${YELLOW}查看迁移日志:${NC}"
+        docker-compose -f "$COMPOSE_FILE" logs db-migrate
+        exit 1
+    fi
+}
+
 # 启动服务
 start_services() {
     echo -e "${BLUE}启动服务...${NC}"
@@ -365,7 +484,6 @@ start_services() {
     cd "$SCRIPT_DIR"
 
     # 创建必要的目录
-    mkdir -p data/n8n_storage
     mkdir -p data/postgres_data
     mkdir -p logs
     mkdir -p config
@@ -376,15 +494,28 @@ start_services() {
         echo -e "${YELLOW}请确保创建 .env 文件并配置必要的环境变量${NC}"
     fi
 
-    echo -e "${YELLOW}正在启动服务...${NC}"
-
     # 设置版本环境变量（使用传入的版本或默认版本）
     VERSION=${VERSION:-$DEFAULT_VERSION}
     export VERSION="$VERSION"
     echo -e "${BLUE}使用版本: $VERSION${NC}"
 
-    if docker-compose -f "$COMPOSE_FILE" up -d; then
-        echo -e "${GREEN}✓ 服务启动成功${NC}"
+    # 第一步：启动 postgres 和 redis
+    echo -e "${YELLOW}第一步：启动 postgres 和 redis 服务...${NC}"
+    if docker-compose -f "$COMPOSE_FILE" up -d postgres redis; then
+        echo -e "${GREEN}✓ postgres 和 redis 服务启动成功${NC}"
+    else
+        echo -e "${RED}✗ postgres 和 redis 服务启动失败${NC}"
+        exit 1
+    fi
+
+    # 第二步：执行数据库迁移
+    echo -e "${YELLOW}第二步：执行数据库迁移...${NC}"
+    run_database_migration
+
+    # 第三步：启动其他服务
+    echo -e "${YELLOW}第三步：启动其他服务...${NC}"
+    if docker-compose -f "$COMPOSE_FILE" up -d --scale db-migrate=0; then
+        echo -e "${GREEN}✓ 所有服务启动成功${NC}"
 
         # 显示服务状态
         echo -e "${BLUE}服务状态:${NC}"
@@ -395,9 +526,8 @@ start_services() {
         echo -e "${BLUE}服务访问地址:${NC}"
         echo -e "${YELLOW}前端: http://localhost:3000${NC}"
         echo -e "${YELLOW}API: http://localhost:8000${NC}"
-        echo -e "${YELLOW}n8n: http://localhost:5678${NC}"
     else
-        echo -e "${RED}✗ 服务启动失败${NC}"
+        echo -e "${RED}✗ 其他服务启动失败${NC}"
         exit 1
     fi
 }
@@ -485,6 +615,16 @@ case "${1:-}" in
         echo -e "${BLUE}使用版本: $VERSION${NC}"
         docker-compose -f "$COMPOSE_FILE" ps
         ;;
+    "migrate")
+        # 确保在正确的目录中
+        cd "$SCRIPT_DIR"
+        # 设置默认版本
+        VERSION=${VERSION:-$DEFAULT_VERSION}
+        export VERSION="$VERSION"
+        echo -e "${BLUE}使用版本: $VERSION${NC}"
+        run_database_migration
+        echo -e "${GREEN}数据库迁移完成${NC}"
+        ;;
     "help"|"-h"|"--help")
         echo -e "${GREEN}=== 部署脚本使用说明 ===${NC}"
         echo -e "${BLUE}用法:${NC}"
@@ -493,6 +633,7 @@ case "${1:-}" in
         echo -e "  ./deploy.sh stop       # 停止服务"
         echo -e "  ./deploy.sh restart    # 重启服务"
         echo -e "  ./deploy.sh status     # 查看服务状态"
+        echo -e "  ./deploy.sh migrate    # 执行数据库迁移"
         echo -e "  ./deploy.sh help       # 显示此帮助信息"
         echo -e ""
         echo -e "${BLUE}示例:${NC}"

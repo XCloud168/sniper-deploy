@@ -92,7 +92,13 @@ chmod +x deploy.sh
    - 将下载的镜像加载到本地Docker环境
    - 验证镜像加载是否成功
 
-5. **服务管理**
+5. **数据库迁移**
+   - 启动PostgreSQL和Redis服务
+   - PostgreSQL启动时自动创建sniper_bot数据库
+   - 等待数据库服务就绪
+   - 执行Alembic数据库迁移到最新版本
+
+6. **服务管理**
    - 停止现有服务（如果有）
    - 启动新服务
    - 显示服务状态和访问地址
@@ -113,7 +119,8 @@ chmod +x deploy.sh
 - 许可证验证和下载配置获取
 - 安全文件配置（public.pem, fernet.key）
 - Docker镜像下载和加载
-- 服务管理（启动、停止、重启、状态查看）
+- 数据库迁移执行
+- 服务管理（启动、停止、重启、状态查看、迁移）
 
 ### check_version.sh
 
@@ -142,6 +149,9 @@ chmod +x deploy.sh
 
 # 查看服务状态
 ./deploy.sh status
+
+# 执行数据库迁移
+./deploy.sh migrate
 
 # 显示帮助信息
 ./deploy.sh help
@@ -176,6 +186,7 @@ chmod +x deploy.sh
 
 部署后，系统包含以下服务：
 
+- **数据库迁移服务** (`db-migrate`): 执行Alembic数据库迁移（一次性服务）
 - **API服务** (`sniper-api`): 后端API服务，端口8000
 - **前端服务** (`sniper-frontend`): Web前端界面，端口3000
 
@@ -183,8 +194,7 @@ chmod +x deploy.sh
 
 部署成功后，可以通过以下地址访问服务：
 
-- **前端**: http://localhost:3000
-- **API**: http://localhost:8000
+- http://localhost:9000
 
 ## 配置说明
 
@@ -231,7 +241,33 @@ ENCRYPTION_KEY=your-encryption-key
    - 确认S3 URL配置正确
    - 检查许可证是否有效
 
-5. **服务启动失败**
+5. **数据库迁移失败**
+   ```bash
+   # 手动执行迁移
+   ./deploy.sh migrate
+
+   # 查看迁移日志
+   docker-compose logs db-migrate
+
+   # 检查数据库连接
+   docker-compose exec postgres psql -U postgres -d sniper_bot -c "\l"
+   ```
+
+6. **前端权限错误**
+   ```bash
+   # 查看前端日志
+   docker-compose logs frontend
+
+   # 重启前端服务
+   docker-compose restart frontend
+
+   # 清理前端缓存
+   docker-compose down
+   docker volume rm deploy_frontend_cache
+   docker-compose up -d
+   ```
+
+7. **服务启动失败**
    ```bash
    # 查看服务日志
    ./deploy.sh logs
@@ -265,10 +301,14 @@ docker-compose logs -f [service-name]
 # 查看服务状态
 ./deploy.sh status
 
+# 执行数据库迁移
+./deploy.sh migrate
+
 # 使用docker-compose命令
 docker-compose down          # 停止服务
 docker-compose up -d        # 启动服务
 docker-compose restart      # 重启服务
+docker-compose run --rm db-migrate  # 执行迁移
 ```
 
 ## 安全注意事项
@@ -295,7 +335,8 @@ docker-compose restart      # 重启服务
 2. 检查Docker状态：`docker info`
 3. 验证网络连接
 4. 运行版本检查：`./check_version.sh`
-5. 联系技术支持团队
+5. 查看数据库迁移指南：`MIGRATION_GUIDE.md`
+6. 联系技术支持团队
 
 ---
 

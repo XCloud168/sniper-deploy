@@ -19,20 +19,47 @@ services:
     profiles:
       - donotstart
 
+  # 数据库迁移服务
+  db-migrate:
+    <<: *api-shared
+    profiles: []
+    command: ["uv", "run", "-m", "alembic", "upgrade", "head"]
+    restart: no
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
   signal_matching:
     <<: *api-shared
     profiles: []
-    command: ["uv", "run", "scripts/run_matching_service.py"]
+    command: ["uv", "run", "app/run_matching_service.py"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   snapshot_scheduler:
     <<: *api-shared
     profiles: []
-    command: ["uv", "run", "scripts/schedule_portfolio_snapshot.py"]
+    command: ["uv", "run", "app/schedule_portfolio_snapshot.py"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   trade:
     <<: *api-shared
     profiles: []
     command: ["uv", "run", "app/trade.py"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   api:
     <<: *api-shared
@@ -45,6 +72,11 @@ services:
       retries: 3
     ports:
       - 8000:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   frontend:
     image: sniper-frontend:${VERSION:-latest}
@@ -54,6 +86,8 @@ services:
       - NEXT_PUBLIC_API_URL=/api/v1
       - NEXT_TELEMETRY_DISABLED=1
       - NEXT_DISABLE_TURBOPACK=1
+    volumes:
+      - frontend_cache:/app/.next/cache
     ports:
       - "3000:3000"
     networks:
@@ -74,8 +108,10 @@ services:
     restart: unless-stopped
     environment:
       - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
     volumes:
       - ./data/postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_postgres.sql:/docker-entrypoint-initdb.d/init_postgres.sql:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-d", "postgres"]
       interval: 5s
@@ -84,6 +120,22 @@ services:
     networks:
       - backend
 
+  nginx:
+    image: nginx:1.25
+    restart: unless-stopped
+    volumes:
+      - ./nginx:/etc/nginx/
+    ports:
+      - 9000:80
+    depends_on:
+      - frontend
+      - api
+    networks:
+      - backend
+
 networks:
   backend:
     driver: bridge
+
+volumes:
+  frontend_cache:
