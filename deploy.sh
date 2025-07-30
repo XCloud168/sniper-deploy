@@ -579,6 +579,32 @@ main() {
 
 # 处理命令行参数
 case "${1:-}" in
+    "start")
+        # 使用本地镜像启动服务
+        echo -e "${GREEN}=== 使用本地镜像启动服务 ===${NC}"
+
+        # 获取版本参数（优先使用环境变量，然后是命令行参数，最后是默认值）
+        VERSION=${VERSION:-${2:-$DEFAULT_VERSION}}
+        echo -e "${BLUE}启动版本: $VERSION${NC}"
+
+        # 检查环境
+        check_environment
+
+        # 验证本地镜像是否存在
+        if ! verify_loaded_images; then
+            echo -e "${RED}错误: 本地镜像验证失败${NC}"
+            echo -e "${YELLOW}请先运行 ./deploy.sh [版本] 下载并加载镜像${NC}"
+            exit 1
+        fi
+
+        # 停止现有服务
+        stop_existing_services
+
+        # 启动服务
+        start_services
+
+        echo -e "${GREEN}=== 本地启动完成 ===${NC}"
+        ;;
     "logs")
         # 设置默认版本
         VERSION=${VERSION:-$DEFAULT_VERSION}
@@ -628,6 +654,7 @@ case "${1:-}" in
         echo -e "${GREEN}=== 部署脚本使用说明 ===${NC}"
         echo -e "${BLUE}用法:${NC}"
         echo -e "  ./deploy.sh [版本]     # 部署指定版本，默认为latest"
+        echo -e "  ./deploy.sh start [版本] # 使用本地镜像启动服务"
         echo -e "  ./deploy.sh logs       # 查看服务日志"
         echo -e "  ./deploy.sh stop       # 停止服务"
         echo -e "  ./deploy.sh restart    # 重启服务"
@@ -639,6 +666,8 @@ case "${1:-}" in
         echo -e "  ./deploy.sh            # 部署最新版本"
         echo -e "  ./deploy.sh 0.0.1     # 部署0.0.1版本"
         echo -e "  ./deploy.sh latest     # 部署最新版本"
+        echo -e "  ./deploy.sh start      # 使用本地镜像启动最新版本"
+        echo -e "  ./deploy.sh start 0.0.1 # 使用本地镜像启动0.0.1版本"
         ;;
     *)
         main "$1"
