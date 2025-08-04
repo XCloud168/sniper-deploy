@@ -23,7 +23,7 @@ services:
   db-migrate:
     <<: *api-shared
     profiles: []
-    command: ["uv", "run", "-m", "alembic", "upgrade", "head"]
+    entrypoint: ["python", "-m", "alembic", "upgrade", "head"]
     restart: no
     depends_on:
       postgres:
@@ -31,20 +31,18 @@ services:
     networks:
       - backend
 
-  signal_matching:
+  signal:
     <<: *api-shared
     profiles: []
-    command: ["uv", "run", "app/run_matching_service.py"]
+    command: "signal"
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
 
-  snapshot_scheduler:
+  snapshot:
     <<: *api-shared
     profiles: []
-    command: ["uv", "run", "app/schedule_portfolio_snapshot.py"]
+    command: "snapshot"
     depends_on:
       postgres:
         condition: service_healthy
@@ -54,7 +52,7 @@ services:
   trade:
     <<: *api-shared
     profiles: []
-    command: ["uv", "run", "app/trade.py"]
+    command: "trade"
     depends_on:
       postgres:
         condition: service_healthy
@@ -64,14 +62,12 @@ services:
   api:
     <<: *api-shared
     profiles: []
-    command: ["uv", "run", "app/api/server.py"]
+    command: "api"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/ping"]
       interval: 5s
       timeout: 3s
       retries: 3
-    ports:
-      - 8000:8000
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,8 +84,6 @@ services:
       - NEXT_DISABLE_TURBOPACK=1
     volumes:
       - frontend_cache:/app/.next/cache
-    ports:
-      - "3000:3000"
     networks:
       - backend
 

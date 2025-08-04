@@ -501,7 +501,7 @@ start_services() {
 
     # 第一步：启动 postgres 和 redis
     echo -e "${YELLOW}第一步：启动 postgres 和 redis 服务...${NC}"
-    if docker-compose -f "$COMPOSE_FILE" up -d postgres redis; then
+    if docker-compose -f "$COMPOSE_FILE" up -d postgres redis --remove-orphans; then
         echo -e "${GREEN}✓ postgres 和 redis 服务启动成功${NC}"
     else
         echo -e "${RED}✗ postgres 和 redis 服务启动失败${NC}"
