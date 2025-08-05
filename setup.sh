@@ -355,7 +355,7 @@ show_deployment_result() {
 
     # 读取并显示管理员配置
     read_admin_config
-    echo -e "${YELLOW}初始用户名: $ADMIN_USERNAME${NC}"
+    echo -e "${YELLOW}初始用户名: $ADMIN_EMAIL${NC}"
     echo -e "${YELLOW}初始密码: $ADMIN_PASSWORD${NC}"
 
     echo ""
