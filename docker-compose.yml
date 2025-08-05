@@ -23,6 +23,7 @@ services:
   db-migrate:
     <<: *api-shared
     profiles: []
+    container_name: sniper-migrate-db
     entrypoint: ["python", "-m", "alembic", "upgrade", "head"]
     restart: "no"
     depends_on:
@@ -34,6 +35,7 @@ services:
   signal:
     <<: *api-shared
     profiles: []
+    container_name: sniper-signal
     command: "signal"
     depends_on:
       postgres:
@@ -42,6 +44,7 @@ services:
   snapshot:
     <<: *api-shared
     profiles: []
+    container_name: sniper-snapshot
     command: "snapshot"
     depends_on:
       postgres:
@@ -52,6 +55,7 @@ services:
   trade:
     <<: *api-shared
     profiles: []
+    container_name: sniper-trade
     command: "trade"
     depends_on:
       postgres:
@@ -62,6 +66,7 @@ services:
   api:
     <<: *api-shared
     profiles: []
+    container_name: sniper-api
     command: "api"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/ping"]
@@ -76,6 +81,7 @@ services:
 
   frontend:
     image: sniper-frontend:${VERSION:-latest}
+    container_name: sniper-ui
     restart: "unless-stopped"
     user: "1000:1000"
     environment:
@@ -89,6 +95,7 @@ services:
 
   redis:
     image: redis:latest
+    container_name: sniper-redis
     restart: "unless-stopped"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -99,6 +106,7 @@ services:
       - backend
   postgres:
     image: docker.io/library/postgres:16-alpine
+    container_name: sniper-postgres
     restart: "unless-stopped"
     environment:
       - POSTGRES_PASSWORD=postgres
@@ -116,6 +124,7 @@ services:
 
   nginx:
     image: nginx:1.25
+    container_name: sniper-nginx
     restart: "unless-stopped"
     volumes:
       - ./nginx:/etc/nginx/
