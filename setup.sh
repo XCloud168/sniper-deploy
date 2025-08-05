@@ -306,6 +306,36 @@ start_services() {
     echo ""
 }
 
+# 读取默认管理员用户配置
+read_admin_config() {
+    local username="admin"
+    local password="123456"
+    local email="admin@sniper-bot.com"
+
+    # 如果.env文件存在，尝试读取配置
+    if [[ -f ".env" ]]; then
+        # 读取用户名
+        if grep -q "^DEFAULT_ADMIN_USERNAME=" .env; then
+            username=$(grep "^DEFAULT_ADMIN_USERNAME=" .env | cut -d'=' -f2 | tr -d '"' | tr -d "'")
+        fi
+
+        # 读取密码
+        if grep -q "^DEFAULT_ADMIN_PASSWORD=" .env; then
+            password=$(grep "^DEFAULT_ADMIN_PASSWORD=" .env | cut -d'=' -f2 | tr -d '"' | tr -d "'")
+        fi
+
+        # 读取邮箱
+        if grep -q "^DEFAULT_ADMIN_EMAIL=" .env; then
+            email=$(grep "^DEFAULT_ADMIN_EMAIL=" .env | cut -d'=' -f2 | tr -d '"' | tr -d "'")
+        fi
+    fi
+
+    # 返回配置（通过全局变量）
+    ADMIN_USERNAME="$username"
+    ADMIN_PASSWORD="$password"
+    ADMIN_EMAIL="$email"
+}
+
 # 显示部署结果
 show_deployment_result() {
     echo -e "${GREEN}"
@@ -322,6 +352,11 @@ show_deployment_result() {
     echo ""
     echo -e "${CYAN}🌐 访问地址:${NC}"
     echo -e "${YELLOW}前端界面: http://localhost:9000${NC}"
+
+    # 读取并显示管理员配置
+    read_admin_config
+    echo -e "${YELLOW}初始用户名: $ADMIN_USERNAME${NC}"
+    echo -e "${YELLOW}初始密码: $ADMIN_PASSWORD${NC}"
 
     echo ""
     echo -e "${CYAN}📝 常用命令:${NC}"
