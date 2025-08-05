@@ -8,7 +8,7 @@ services:
       - ./logs:/app/logs:rw
       - ./config:/app/config:ro
       - ./license.lic:/app/license.lic:rw
-    restart: unless-stopped
+    restart: "unless-stopped"
     depends_on:
       postgres:
         condition: service_healthy
@@ -24,7 +24,7 @@ services:
     <<: *api-shared
     profiles: []
     entrypoint: ["python", "-m", "alembic", "upgrade", "head"]
-    restart: no
+    restart: "no"
     depends_on:
       postgres:
         condition: service_healthy
@@ -76,7 +76,7 @@ services:
 
   frontend:
     image: sniper-frontend:${VERSION:-latest}
-    restart: unless-stopped
+    restart: "unless-stopped"
     user: "1000:1000"
     environment:
       - NEXT_PUBLIC_API_URL=/api/v1
@@ -89,7 +89,7 @@ services:
 
   redis:
     image: redis:latest
-    restart: unless-stopped
+    restart: "unless-stopped"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -99,7 +99,7 @@ services:
       - backend
   postgres:
     image: docker.io/library/postgres:16-alpine
-    restart: unless-stopped
+    restart: "unless-stopped"
     environment:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
@@ -116,7 +116,7 @@ services:
 
   nginx:
     image: nginx:1.25
-    restart: unless-stopped
+    restart: "unless-stopped"
     volumes:
       - ./nginx:/etc/nginx/
     ports:
