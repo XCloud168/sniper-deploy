@@ -65,12 +65,12 @@ check_system_requirements() {
     fi
 
     # 检查Docker Compose
-    if command -v docker-compose &> /dev/null; then
-        COMPOSE_VERSION=$(docker-compose --version | cut -d' ' -f3 | cut -d',' -f1)
+    if docker compose version &> /dev/null; then
+        COMPOSE_VERSION=$(docker compose version --short)
         echo -e "${GREEN}✓ Docker Compose: $COMPOSE_VERSION${NC}"
     else
-        echo -e "${RED}✗ Docker Compose未安装${NC}"
-        echo -e "${YELLOW}请先安装Docker Compose: https://docs.docker.com/compose/install/${NC}"
+        echo -e "${RED}✗ Docker Compose未安装或不可用${NC}"
+        echo -e "${YELLOW}请确保Docker版本支持compose命令${NC}"
         exit 1
     fi
 
@@ -257,14 +257,14 @@ start_services() {
     export VERSION="$VERSION"
 
     # 停止现有服务
-    if docker-compose -f "$COMPOSE_FILE" ps | grep -q "Up"; then
+    if docker compose -f "$COMPOSE_FILE" ps | grep -q "Up"; then
         echo -e "${YELLOW}停止现有服务...${NC}"
-        docker-compose -f "$COMPOSE_FILE" down
+        docker compose -f "$COMPOSE_FILE" down
     fi
 
     # 启动基础服务
     echo -e "${YELLOW}启动数据库和缓存服务...${NC}"
-    if ! docker-compose -f "$COMPOSE_FILE" up -d postgres redis; then
+    if ! docker compose -f "$COMPOSE_FILE" up -d postgres redis; then
         echo -e "${RED}✗ 基础服务启动失败${NC}"
         exit 1
     fi
@@ -274,7 +274,7 @@ start_services() {
     timeout=60
     counter=0
     while [ $counter -lt $timeout ]; do
-        if docker-compose -f "$COMPOSE_FILE" ps postgres | grep -q "(healthy)"; then
+        if docker compose -f "$COMPOSE_FILE" ps postgres | grep -q "(healthy)"; then
             echo -e "${GREEN}✓ 数据库已就绪${NC}"
             break
         fi
@@ -291,7 +291,7 @@ start_services() {
     # 执行数据库迁移
     echo -e "${YELLOW}执行数据库迁移...${NC}"
     sleep 1
-    if ! docker-compose -f "$COMPOSE_FILE" run --rm db-migrate; then
+    if ! docker compose -f "$COMPOSE_FILE" run --rm db-migrate; then
         echo -e "${RED}✗ 数据库迁移失败${NC}"
         exit 1
     fi
@@ -348,7 +348,7 @@ show_deployment_result() {
     echo -e "${NC}"
 
     echo -e "${CYAN}📊 服务状态:${NC}"
-    docker-compose -f "$COMPOSE_FILE" ps
+    docker compose -f "$COMPOSE_FILE" ps
 
     echo ""
     echo -e "${CYAN}🌐 访问地址:${NC}"
@@ -356,15 +356,16 @@ show_deployment_result() {
 
     # 读取并显示管理员配置
     read_admin_config
-    echo -e "${YELLOW}初始用户名: $ADMIN_EMAIL${NC}"
+    echo -e "${YELLOW}初始用户名: $ADMIN_USERNAME${NC}"
     echo -e "${YELLOW}初始密码: $ADMIN_PASSWORD${NC}"
+    echo -e "${YELLOW}管理员邮箱: $ADMIN_EMAIL${NC}"
 
     echo ""
     echo -e "${CYAN}📝 常用命令:${NC}"
-    echo -e "${YELLOW}查看日志: docker-compose logs -f${NC}"
-    echo -e "${YELLOW}停止服务: docker-compose down${NC}"
-    echo -e "${YELLOW}重启服务: docker-compose restart${NC}"
-    echo -e "${YELLOW}查看状态: docker-compose ps${NC}"
+    echo -e "${YELLOW}查看日志: docker compose logs -f${NC}"
+    echo -e "${YELLOW}停止服务: docker compose down${NC}"
+    echo -e "${YELLOW}重启服务: docker compose restart${NC}"
+    echo -e "${YELLOW}查看状态: docker compose ps${NC}"
 
     echo ""
     echo -e "${GREEN}感谢使用 $PROJECT_NAME！${NC}"
