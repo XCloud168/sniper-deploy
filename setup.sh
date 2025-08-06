@@ -274,7 +274,7 @@ start_services() {
     timeout=60
     counter=0
     while [ $counter -lt $timeout ]; do
-        if docker-compose -f "$COMPOSE_FILE" ps postgres | grep -q "healthy"; then
+        if docker-compose -f "$COMPOSE_FILE" ps postgres | grep -q "(healthy)"; then
             echo -e "${GREEN}✓ 数据库已就绪${NC}"
             break
         fi
@@ -290,6 +290,7 @@ start_services() {
 
     # 执行数据库迁移
     echo -e "${YELLOW}执行数据库迁移...${NC}"
+    sleep 1
     if ! docker-compose -f "$COMPOSE_FILE" run --rm db-migrate; then
         echo -e "${RED}✗ 数据库迁移失败${NC}"
         exit 1
@@ -297,7 +298,7 @@ start_services() {
 
     # 启动所有服务
     echo -e "${YELLOW}启动所有服务...${NC}"
-    if ! docker-compose -f "$COMPOSE_FILE" up -d --scale db-migrate=0; then
+    if ! docker compose -f "$COMPOSE_FILE" up -d --scale db-migrate=0; then
         echo -e "${RED}✗ 服务启动失败${NC}"
         exit 1
     fi
