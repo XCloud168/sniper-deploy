@@ -508,6 +508,8 @@ start_services() {
         exit 1
     fi
 
+    sleep 10
+
     # 第二步：执行数据库迁移
     echo -e "${YELLOW}第二步：执行数据库迁移...${NC}"
     run_database_migration
