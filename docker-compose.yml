@@ -1,4 +1,5 @@
 services:
+  # 共享API配置模板
   api-shared: &api-shared
     image: sniper-api:${VERSION:-latest}
     user: "1000:1000"
@@ -9,11 +10,6 @@ services:
       - ./config:/app/config:ro
       - ./license.lic:/app/license.lic:rw
     restart: "unless-stopped"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     networks:
       - backend
     profiles:
@@ -29,9 +25,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - backend
 
+  # 信号处理服务
   signal:
     <<: *api-shared
     profiles: []
@@ -41,6 +36,7 @@ services:
       postgres:
         condition: service_healthy
 
+  # 快照服务
   snapshot:
     <<: *api-shared
     profiles: []
@@ -52,6 +48,7 @@ services:
       redis:
         condition: service_healthy
 
+  # 交易服务
   trade:
     <<: *api-shared
     profiles: []
@@ -63,6 +60,7 @@ services:
       redis:
         condition: service_healthy
 
+  # API服务
   api:
     <<: *api-shared
     profiles: []
@@ -79,6 +77,7 @@ services:
       redis:
         condition: service_healthy
 
+  # 前端服务
   frontend:
     image: sniper-frontend:${VERSION:-latest}
     container_name: sniper-ui
@@ -93,6 +92,7 @@ services:
     networks:
       - backend
 
+  # Redis缓存服务
   redis:
     image: redis:latest
     container_name: sniper-redis
@@ -104,6 +104,8 @@ services:
       retries: 3
     networks:
       - backend
+
+  # PostgreSQL数据库服务
   postgres:
     image: docker.io/library/postgres:16-alpine
     container_name: sniper-postgres
@@ -122,6 +124,7 @@ services:
     networks:
       - backend
 
+  # Nginx反向代理服务
   nginx:
     image: nginx:1.25
     container_name: sniper-nginx
