@@ -8,6 +8,9 @@ on:
 jobs:
   create-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
 
     steps:
       - name: Checkout code
@@ -44,14 +47,36 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref }}
-          name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-          files: |
-            masbate-deploy-${{ github.ref_name }}.tar.gz
-            masbate-deploy-${{ github.ref_name }}.zip
+        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload tar.gz asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./masbate-deploy-${{ github.ref_name }}.tar.gz
+          asset_name: masbate-deploy-${{ github.ref_name }}.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload zip asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./masbate-deploy-${{ github.ref_name }}.zip
+          asset_name: masbate-deploy-${{ github.ref_name }}.zip
+          asset_content_type: application/zip
+
+      - name: Cleanup artifacts
+        run: |
+          rm -f masbate-deploy-${{ github.ref_name }}.tar.gz
+          rm -f masbate-deploy-${{ github.ref_name }}.zip
