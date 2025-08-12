@@ -11,7 +11,7 @@ NC='\033[0m' # No Color
 # 配置变量
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_NAME="Sniper Bot"
-VERSION="0.0.7"  # 固定版本号，确保每次都是最新版本
+VERSION="0.0.8"  # 固定版本号，确保每次都是最新版本
 LICENSE_FILE="license.lic"
 LICENSE_SERVER_URL="https://xmsbatedys.masbate.xyz/download-installation-package"
 COMPOSE_FILE="docker-compose.yml"
