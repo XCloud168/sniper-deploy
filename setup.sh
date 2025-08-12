@@ -165,15 +165,15 @@ download_images() {
         -H "Connection: keep-alive" \
         -d "{\"license_content\":\"$LICENSE_CONTENT\",\"version\":\"$VERSION\"}" \
         "$LICENSE_SERVER_URL" \
-        --output data.tar.gz)
+        --output data.zip)
 
     # 检查响应
     HTTP_CODE="${HTTP_RESPONSE: -3}"
     if [[ "$HTTP_CODE" != "200" ]]; then
         echo -e "${RED}✗ 许可证验证失败 (HTTP $HTTP_CODE)${NC}"
-        if [[ -f "data.tar.gz" ]]; then
+        if [[ -f "data.zip" ]]; then
             echo -e "${YELLOW}错误详情:${NC}"
-            cat data.tar.gz
+            cat data.zip
         fi
         cd ..
         rm -rf "$TEMP_DIR"
@@ -184,7 +184,7 @@ download_images() {
 
     # 解压下载包
     echo -e "${YELLOW}正在解压下载包...${NC}"
-    if ! tar -xzf data.tar.gz; then
+    if ! python3 -m zipfile -e data.zip $TEMP_DIR; then
         echo -e "${RED}✗ 下载包解压失败${NC}"
         cd ..
         rm -rf "$TEMP_DIR"
