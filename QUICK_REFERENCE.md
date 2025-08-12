@@ -1,188 +1,228 @@
 # Sniper Bot 快速参考
 
-## 🚀 快速开始
+## 🚀 快速部署
 
-### 首次部署
+### 一键部署
+
 ```bash
-# 1. 环境检查
+# 环境检查
 ./prepare.sh
 
-# 2. 配置环境变量
-cp env.example .env
-# 编辑 .env 文件
-
-# 3. 部署服务
-./deploy.sh [版本]
+# 安装并启动服务
+./setup.sh
 ```
 
-### 常用命令
+### 服务管理
 
-| 命令 | 说明 | 示例 |
-|------|------|------|
-| `./deploy.sh` | 部署最新版本 | `./deploy.sh` |
-| `./deploy.sh [版本]` | 部署指定版本 | `./deploy.sh 0.0.1` |
-| `./deploy.sh status` | 查看服务状态 | `./deploy.sh status` |
-| `./deploy.sh logs` | 查看服务日志 | `./deploy.sh logs` |
-| `./deploy.sh stop` | 停止所有服务 | `./deploy.sh stop` |
-| `./deploy.sh restart` | 重启所有服务 | `./deploy.sh restart` |
-| `./deploy.sh help` | 显示帮助信息 | `./deploy.sh help` |
+```bash
+# 查看状态
+docker compose ps
 
-## 📊 监控和诊断
+# 启动服务
+docker compose up -d
+
+# 停止服务
+docker compose down
+
+# 重启服务
+docker compose restart
+
+# 查看日志
+docker compose logs -f
+```
+
+## 📋 常用命令
 
 ### 版本检查
+
 ```bash
-# 完整版本检查
-./check_version.sh
+# 查看 Docker 镜像
+docker images
 
-# 检查 Docker 镜像
-./check_version.sh images
+# 查看运行中的容器
+docker compose ps
 
-# 检查运行中的容器
-./check_version.sh containers
+# 查看服务状态
+docker compose ps
 
-# 检查配置文件
-./check_version.sh config
+# 查看版本信息
+docker compose exec api python -c "import app; print(app.__version__)" 2>/dev/null || echo "版本信息不可用"
 ```
 
-### 服务状态
-```bash
-# 查看所有服务状态
-docker-compose ps
+### Docker 命令
 
-# 查看特定服务状态
-docker-compose ps api
-docker-compose ps frontend
-docker-compose ps n8n
+```bash
+# 查看容器状态
+docker compose ps
+
+# 查看日志
+docker compose logs [service]
+
+# 重启服务
+docker compose restart [service]
+
+# 进入容器
+docker compose exec [service] bash
 ```
 
-### 日志查看
+### 数据库操作
+
 ```bash
-# 查看所有服务日志
-docker-compose logs
+# 执行迁移
+docker compose run --rm db-migrate
 
-# 查看特定服务日志
-docker-compose logs api
-docker-compose logs frontend
-docker-compose logs n8n
+# 备份数据库
+docker compose exec postgres pg_dump -U postgres sniper_bot > backup.sql
 
-# 实时查看日志
-docker-compose logs -f api
+# 恢复数据库
+docker compose exec -T postgres psql -U postgres sniper_bot < backup.sql
 ```
 
-## 🔧 故障排除
+## ⚙️ 配置参考
 
-### 常见问题解决
+### 环境变量
 
-| 问题 | 解决方案 |
-|------|----------|
-| Docker 未安装 | `./prepare.sh` |
-| 许可证验证失败 | 检查 `license.lic` 文件 |
-| 服务启动失败 | `./deploy.sh logs` 查看错误 |
-| 端口被占用 | 检查端口 3000, 8000, 5678 |
-| 磁盘空间不足 | `df -h` 检查磁盘使用 |
+```bash
+# 复制配置模板
+cp env.example .env
+
+# 编辑配置
+vim .env
+
+# 主要配置项
+# - DATABASE_URL: 数据库连接
+# - REDIS_URL: Redis 连接
+# - SECRET_KEY: JWT 认证密钥
+# - OKX_API_*: OKX API 凭据
+# - CHAINS__*__RPC_URL: 区块链 RPC 配置
+# - SIGNAL_*: Signal 配置
+# - DEFAULT_ADMIN_*: 默认管理员账户
+```
+
+### 端口配置
+
+| 服务       | 端口 | 说明     |
+| ---------- | ---- | -------- |
+| 前端       | 9000 | Web 界面 |
+| API        | 8000 | 后端 API |
+| PostgreSQL | 5432 | 数据库   |
+| Redis      | 6379 | 缓存     |
+
+### 服务器配置
+
+```bash
+# 使用服务器配置
+cp env.server.example .env
+cp docker-compose-server.yml docker-compose.yml
+cp nginx/nginx-server.conf nginx/nginx.conf
+```
+
+## 🔍 故障排除
+
+### 常见问题
+
+```bash
+# Docker 未启动
+./prepare.sh
+
+# 端口被占用
+sudo lsof -ti:9000 | xargs kill -9
+
+# 查看错误日志
+docker compose logs | grep ERROR
+
+# 清理系统
+docker system prune -f
+```
 
 ### 诊断命令
+
 ```bash
 # 系统信息
 uname -a
 docker --version
 
-# 网络连接
-ping google.com
-curl -I http://localhost:8000
+# 网络测试
+curl -f http://localhost:9000
 
-# 资源使用
-docker stats
+# 磁盘空间
 df -h
-free -h
+du -sh *
 ```
 
-## 🌐 服务访问
+## 📦 发布管理
 
-| 服务 | 地址 | 端口 |
-|------|------|------|
-| 前端界面 | http://localhost:3000 | 3000 |
-| API 服务 | http://localhost:8000 | 8000 |
+### 创建发布
 
-## 📁 文件结构
-
-```
-deploy/
-├── docker-compose.yml    # Docker 配置
-├── deploy.sh            # 主部署脚本
-├── prepare.sh           # 环境检查脚本
-├── check_version.sh     # 版本检查脚本
-├── license.lic          # 许可证文件
-├── env.example          # 环境变量示例
-├── .env                 # 环境变量配置
-├── config/              # 配置文件目录
-├── data/                # 数据目录
-└── logs/                # 日志目录
-```
-
-## ⚙️ 配置说明
-
-### 关键环境变量
 ```bash
-# 数据库配置
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-POSTGRES_DB=sniper_bot
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
+# 提交代码
+git add .
+git commit -m "准备发布"
+git push origin main
 
-# 加密配置
-ENCRYPTION_KEY=your-encryption-key
-SECRET_KEY=your-secret-key-for-jwt
-
+# 创建 tag
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
-## 🔄 维护操作
+### 下载发布包
 
-### 数据备份
+- 访问 GitHub Releases 页面
+- 下载 `masbate-deploy-{version}.tar.gz` 或 `.zip`
+- 解压到本地目录
+
+## 🔧 维护命令
+
+### 备份
+
 ```bash
 # 备份数据库
-docker-compose exec postgres pg_dump -U postgres sniper_bot > backup.sql
+docker compose exec postgres pg_dump -U postgres sniper_bot > backup_$(date +%Y%m%d).sql
 
-# 备份配置文件
-tar -czf config_backup.tar.gz config/
+# 备份配置
+tar -czf config_backup_$(date +%Y%m%d).tar.gz config/
 ```
 
-### 版本更新
+### 清理
+
 ```bash
-# 更新到新版本
-./deploy.sh [新版本号]
-
-# 验证更新
-./check_version.sh
-```
-
-### 日志管理
-```bash
-# 查看日志大小
-du -sh logs/*
-
-# 清理旧日志
+# 清理日志
 find logs/ -name "*.log" -mtime +7 -delete
+
+# 清理 Docker
+docker system prune -f
+docker volume prune -f
 ```
 
-## 🛡️ 安全建议
+### 监控
 
-1. **定期更新**: 及时更新系统和 Docker 镜像
-2. **访问控制**: 限制对管理端口的访问
-3. **日志监控**: 定期检查日志文件
-4. **备份策略**: 定期备份重要数据
-5. **网络安全**: 使用防火墙保护服务
+```bash
+# 资源使用
+docker stats
 
-## 📞 技术支持
+# 健康检查
+curl -f http://localhost:9000
+```
 
-遇到问题时：
+## 📞 支持
 
-1. 运行诊断命令：`./check_version.sh`
-2. 查看错误日志：`./deploy.sh logs`
-3. 收集系统信息：`uname -a; docker --version`
-4. 联系技术支持团队
+### 获取帮助
+
+```bash
+# 查看帮助
+./setup.sh help
+
+# 运行诊断
+docker compose ps
+docker images
+```
+
+### 日志位置
+
+- 应用日志: `logs/`
+- Docker 日志: `docker compose logs`
+- 系统日志: `/var/log/`
 
 ---
 
-**提示**: 使用 `./deploy.sh help` 查看完整的命令帮助信息。
+**提示**: 更多详细信息请参考 [README.md](README.md)

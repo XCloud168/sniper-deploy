@@ -1,0 +1,57 @@
+name: Release on Tag
+
+on:
+  push:
+    tags:
+      - "v*" # 匹配所有以v开头的tag，如v1.0.0
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create filtered archive
+        run: |
+          # 创建临时目录用于构建过滤后的压缩包
+          mkdir -p temp_release
+
+          # 复制所有文件，但排除指定的文件和目录
+          rsync -av --exclude='centrifugo/' \
+                    --exclude='docker-compose-server.yml' \
+                    --exclude='nginx/nginx-server.conf' \
+                    --exclude='env.server.example' \
+                    --exclude='.git/' \
+                    --exclude='temp_release/' \
+                    --exclude='logs/' \
+                    --exclude='data/' \
+                    ./ temp_release/
+
+          # 创建压缩包
+          cd temp_release
+          tar -czf ../masbate-deploy-${GITHUB_REF#refs/tags/}.tar.gz .
+          cd ..
+
+          # 创建zip包
+          cd temp_release
+          zip -r ../masbate-deploy-${GITHUB_REF#refs/tags/}.zip .
+          cd ..
+
+          # 清理临时目录
+          rm -rf temp_release
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref }}
+          name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+          files: |
+            masbate-deploy-${{ github.ref_name }}.tar.gz
+            masbate-deploy-${{ github.ref_name }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

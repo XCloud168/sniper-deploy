@@ -3,7 +3,7 @@ services:
     image: docker.n8n.io/n8nio/n8n:latest
     restart: unless-stopped
     volumes:
-      - ./data/n8n_storage:/home/node/.n8n:rw
+      - n8n_storage:/home/node/.n8n:rw
     env_file:
       - .env
     environment:
@@ -118,8 +118,6 @@ services:
       - frontend_cache:/app/.next/cache
     networks:
       - backend
-    profiles:
-      - donotstart
 
   n8n:
     <<: *n8n-shared
@@ -170,7 +168,7 @@ services:
     container_name: sniper-nginx
     restart: "unless-stopped"
     volumes:
-      - ./nginx:/etc/nginx/
+      - ./nginx/nginx-server.conf:/etc/nginx/nginx.conf:ro
     ports:
       - 9000:80
     depends_on:
@@ -203,3 +201,4 @@ networks:
 
 volumes:
   frontend_cache:
+  n8n_storage:
