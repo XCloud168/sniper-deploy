@@ -182,8 +182,6 @@ services:
   centrifugo:
     image: centrifugo/centrifugo:latest
     restart: unless-stopped
-    ports:
-      - "8001:8000"
     ulimits:
       nofile:
         soft: 65535

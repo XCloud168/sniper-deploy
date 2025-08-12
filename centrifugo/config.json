@@ -1,0 +1,38 @@
+{
+    "client": {
+        "token": {
+            "hmac_secret_key": "f_nmtFUoSx4MCEZ5Q_2v4_3I8ubYARq2qzd2XVbwQb4401Mt8A0QP4Nx3iOHDCV0YoGfOzpzqsyl3N56XSkp_A"
+        },
+        "allowed_origins": [
+            "http://localhost:8000",
+            "https://my.trustcoin.com"
+        ]
+    },
+    "admin": {
+        "enabled": true,
+        "password": "Yao-jv-zBC1MnSLy0TmIcA",
+        "secret": "qab-wlEosNT-1edRwmio9buE68FY3aBXj1ryh1S-KBfnXJeIprZY8xrr6OOD9jX1rp8qlQUELMIUgfodzp-VxQ"
+    },
+    "http_api": {
+        "key": "8FG6XnH7ePBevE_9WYY6EcCbfPXqGoNKcMTmM1gPVJ1Obq74CYHyNFTszz5luXFwfvuCd13EAg3H-TPpJsx3eQ"
+    },
+    "engine": {
+        "redis": {
+            "address": "redis:6379"
+        },
+        "type": "redis"
+    },
+    "channel": {
+        "namespaces": [
+            {
+                "name": "signals",
+                "allow_publish_for_client": true,
+                "allow_publish_for_anonymous": true,
+                "allow_subscribe_for_client": true,
+                "history_size": 100,
+                "history_ttl": "10m",
+                "force_recovery": false
+            }
+        ]
+    }
+}
