@@ -11,7 +11,7 @@ NC='\033[0m' # No Color
 # 配置变量
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_NAME="Sniper Bot"
-VERSION="0.0.8"  # 固定版本号，确保每次都是最新版本
+VERSION="${VERSION:-0.0.9}"  # 从环境变量读取版本号，如果没有则使用默认值
 LICENSE_FILE="license.lic"
 LICENSE_SERVER_URL="https://xmsbatedys.masbate.xyz/download-installation-package"
 COMPOSE_FILE="docker-compose.yml"
@@ -184,7 +184,7 @@ download_images() {
 
     # 解压下载包
     echo -e "${YELLOW}正在解压下载包...${NC}"
-    if ! python3 -m zipfile -e data.zip $TEMP_DIR; then
+    if ! python3 -m zipfile -e data.zip .; then
         echo -e "${RED}✗ 下载包解压失败${NC}"
         cd ..
         rm -rf "$TEMP_DIR"
